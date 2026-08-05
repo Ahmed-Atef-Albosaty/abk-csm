@@ -61,7 +61,7 @@ function exportCustomerPDF(customer, accounts, serviceRequests) {
   autoTable(doc, {
     startY: 84,
     head: [["Account Number", "Balance", "Status"]],
-    body: accounts.map((a) => [a.Acc_number, `$${a.balance.toLocaleString()}`, a.status]),
+    body: accounts.map((a) => [a.Acc_number, `EGP ${a.balance.toLocaleString()}`, a.status]),
     headStyles: { fillColor: blue, textColor: 255, fontStyle: "bold" },
     alternateRowStyles: { fillColor: [237, 242, 255] },
     styles: { fontSize: 9, cellPadding: 4 },
@@ -116,7 +116,7 @@ function exportTransactionsPDF(account, txList, customerName) {
   doc.text(`Generated ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}`, 14, 40);
 
   const meta = [
-    ["Current Balance", `$${account.balance.toLocaleString()}`],
+    ["Current Balance", `EGP ${account.balance.toLocaleString()}`],
     ["Account Status", account.status],
     ["Total Transactions", String(txList.length)],
   ];
@@ -139,8 +139,8 @@ function exportTransactionsPDF(account, txList, customerName) {
       i + 1,
       new Date(tx.time_stamp).toLocaleString("en-GB"),
       tx.Transaction_type,
-      (tx.Transaction_type === "Deposit" ? "+" : "-") + `$${tx.Transaction_Amount.toLocaleString()}`,
-      `$${tx.balanceAfter.toLocaleString()}`,
+      (tx.Transaction_type === "Deposit" ? "+" : "-") + `EGP ${tx.Transaction_Amount.toLocaleString()}`,
+      `EGP ${tx.balanceAfter.toLocaleString()}`,
     ]),
     headStyles: { fillColor: blue, textColor: 255, fontStyle: "bold" },
     alternateRowStyles: { fillColor: [237, 242, 255] },
@@ -361,7 +361,7 @@ function CustomerDetail() {
                 <div className="px-6 py-5">
                   <label className="block text-sm font-medium text-slate-600 uppercase tracking-wide mb-1.5">Amount</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-base font-medium">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-base font-medium">EGP</span>
                     <input
                       autoFocus
                       type="number"
@@ -371,7 +371,7 @@ function CustomerDetail() {
                       onChange={(e) => { setTxAmount(e.target.value); setTxError(""); }}
                       onKeyDown={(e) => e.key === "Enter" && confirmTransaction()}
                       placeholder="0.00"
-                      className="form-input pl-7"
+                      className="form-input pl-12"
                     />
                   </div>
                   {txError && (
@@ -557,7 +557,7 @@ function CustomerDetail() {
                         <StatusBadge value={acc.status} />
                         <span className="text-sm detail-muted">Balance</span>
                         <span className="text-xl font-bold text-[#f9c723]">
-                          {acc.balance.toLocaleString("en-US", { style: "currency", currency: "USD" })}
+                          {acc.balance.toLocaleString("en-EG", { style: "currency", currency: "EGP" })}
                         </span>
                       </div>
                     </div>
@@ -620,12 +620,12 @@ function CustomerDetail() {
                                     <div>
                                       <span className="font-medium" style={{ color: tx.Transaction_type === "Deposit" ? "#86efac" : "#fca5a5" }}>
                                         {tx.Transaction_type === "Deposit" ? "+" : "-"}
-                                        {tx.Transaction_Amount.toLocaleString("en-US", { style: "currency", currency: "USD" })}
+                                        {tx.Transaction_Amount.toLocaleString("en-EG", { style: "currency", currency: "EGP" })}
                                       </span>
                                       <p className="text-sm detail-muted mt-0.5">{new Date(tx.time_stamp).toLocaleDateString()}</p>
                                     </div>
                                     <span className="text-sm detail-muted">
-                                      Balance: {tx.balanceAfter.toLocaleString("en-US", { style: "currency", currency: "USD" })}
+                                      Balance: {tx.balanceAfter.toLocaleString("en-EG", { style: "currency", currency: "EGP" })}
                                     </span>
                                   </div>
                                 ))}

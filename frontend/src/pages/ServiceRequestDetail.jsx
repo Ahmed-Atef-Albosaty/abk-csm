@@ -120,6 +120,7 @@ function ServiceRequestDetail() {
   const [toast, setToast] = useState(null);
 
   const myAgentId = getTokenPayload()?.agentId;
+  const myRole = getTokenPayload()?.role;
 
   useEffect(() => {
     Promise.all([
@@ -179,6 +180,12 @@ function ServiceRequestDetail() {
   );
 
   const nextStatuses = VALID_TRANSITIONS[request.status] || [];
+  const assignedAgent = agents.find((a) => a._id === String(request.assignedAgentId));
+  const assignedAgentLabel = request.assignedAgentId
+    ? assignedAgent
+      ? `${assignedAgent.name} (${assignedAgent.role})`
+      : String(request.assignedAgentId).slice(-8)
+    : "Unassigned";
 
   return (
     <Layout>
@@ -238,7 +245,7 @@ function ServiceRequestDetail() {
                 ["Account ID", request.accountId ? String(request.accountId).slice(-8) : "None"],
                 ["Created", new Date(request.createdAt).toLocaleDateString()],
                 ["Resolved", request.resolvedAt ? new Date(request.resolvedAt).toLocaleDateString() : "Pending"],
-                ["Assigned Agent", request.assignedAgentId ? String(request.assignedAgentId).slice(-8) : "Unassigned"],
+                ["Assigned Agent", assignedAgentLabel],
               ].map(([label, value]) => (
                 <div key={label}>
                   <p className="text-xs detail-muted uppercase tracking-wide font-medium">{label}</p>
@@ -287,24 +294,26 @@ function ServiceRequestDetail() {
                     Mark as {s}
                   </button>
                 ))}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                  <select
-                    value={agentId}
-                    onChange={(e) => setAgentId(e.target.value)}
-                    className="form-select sm:w-52"
-                  >
-                    <option value="">Select agent…</option>
-                    {agents.map((a) => (
-                      <option key={a._id} value={a._id}>{a.name} ({a.role})</option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={assignAgent}
-                    className="btn-primary"
-                  >
-                    Assign
-                  </button>
-                </div>
+                {myRole === "Supervisor" && (
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                    <select
+                      value={agentId}
+                      onChange={(e) => setAgentId(e.target.value)}
+                      className="form-select sm:w-52"
+                    >
+                      <option value="">Select agent…</option>
+                      {agents.map((a) => (
+                        <option key={a._id} value={a._id}>{a.name} ({a.role})</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={assignAgent}
+                      className="btn-primary"
+                    >
+                      Assign
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

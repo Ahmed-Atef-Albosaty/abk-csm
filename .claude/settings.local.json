@@ -18,7 +18,10 @@
       "Bash(pkill -f \"vite\")",
       "Bash(vercel whoami *)",
       "Bash(vercel project *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(vercel --prod --yes)"
     ]
   },
   "outputStyle": "default"

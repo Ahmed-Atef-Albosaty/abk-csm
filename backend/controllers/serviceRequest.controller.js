@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const ServiceRequest = require("../models/ServiceRequest");
 const RequestNote = require("../models/RequestNote");
 const Account = require("../models/Account");
+const ServiceAgent = require("../models/ServiceAgent");
 
 const validTransitions = {
   New: ["InProgress"],
@@ -98,6 +99,13 @@ const assignAgent = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
+    const targetAgent = await ServiceAgent.findById(agentId).session(session);
+    if (!targetAgent) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Agent not found" });
+    }
+
     const serviceRequest = await ServiceRequest.findByIdAndUpdate(
       req.params.id,
       { assignedAgentId: agentId },
@@ -113,7 +121,7 @@ const assignAgent = async (req, res) => {
         {
           serviceRequestId: serviceRequest._id,
           agentId: req.agent.agentId,
-          note: `Request assigned to agent`,
+          note: `Request assigned to ${targetAgent.name}`,
         },
       ],
       { session }

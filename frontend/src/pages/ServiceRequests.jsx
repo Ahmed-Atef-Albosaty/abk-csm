@@ -211,7 +211,7 @@ function ServiceRequests() {
                 >
                   <option value="">{form.customerId && customerAccounts.length === 0 ? "No accounts" : "Select an account"}</option>
                   {customerAccounts.map((a) => (
-                    <option key={a._id} value={a._id}>{a.Acc_number} (${a.balance.toLocaleString()})</option>
+                    <option key={a._id} value={a._id}>{a.Acc_number} (EGP {a.balance.toLocaleString()})</option>
                   ))}
                 </select>
               </div>
