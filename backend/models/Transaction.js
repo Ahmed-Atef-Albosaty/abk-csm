@@ -1,9 +1,13 @@
 const mongoose = require("mongoose");
 const TransactionSchema = new mongoose.Schema({
-  Acc_Id: { type: mongoose.Schema.Types.ObjectId, ref: "account", required: true },
+  Acc_Id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "account",
+    required: true,
+  },
   Transaction_type: {
     type: String,
-    enum: ["Deposit", "Withdrawal"],
+    enum: ["Deposit", "Withdrawal", "LoanDisbursement"],
     required: true,
   },
   Transaction_Amount: {

@@ -49,6 +49,15 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    to: "/loans",
+    label: "Loans",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeWidth="1.8" strokeLinecap="round" d="M12 8v8m-3-5h6M5 21V9a2 2 0 012-2h1.5L12 3l3.5 4H17a2 2 0 012 2v12" />
+      </svg>
+    ),
+  },
 ];
 
 function TestingBanner() {

@@ -25,6 +25,7 @@ const dashboardRoutes = require("./Routes/dashboard.routes");
 const serviceRequestRoutes = require("./Routes/ServiceRequests.routes");
 const TransactionRoutes = require("./Routes/Transaction.routes");
 const agentRoutes = require("./Routes/agent.routes");
+const LoanRoutes = require("./Routes/loan.routes");
 
 app.use("/auth", authRoutes);
 app.use("/customer", customerRoutes);
@@ -32,6 +33,7 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/service-requests", serviceRequestRoutes);
 app.use("/transactions", TransactionRoutes);
 app.use("/agents", agentRoutes);
+app.use("/loan", LoanRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: `Server is running on port ${PORT}` });
