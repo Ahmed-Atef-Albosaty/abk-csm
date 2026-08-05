@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(node server.js)",
+      "Bash(curl -s http://localhost:8000/)",
+      "Read(//tmp/**)",
+      "Bash(node -e ' *)",
+      "WebSearch",
+      "Bash(sed -i '' 's/px-5 py-4/px-6 py-5/g' /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/ServiceRequests.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/Customers.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/Agents.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/CustomerDetail.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/ServiceRequestDetail.jsx)",
+      "Bash(sed -i '' 's/px-5 py-3/px-6 py-4/g' /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/ServiceRequests.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/Customers.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/Agents.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/CustomerDetail.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/ServiceRequestDetail.jsx)"
+    ]
+  },
+  "outputStyle": "default"
+}
