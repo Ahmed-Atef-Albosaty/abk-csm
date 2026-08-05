@@ -13,13 +13,13 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 
 app.use(cors());
 
 app.use(express.json());
 
-const authRoutes = require("./Routes/auth.routes");
+const authRoutes = require("./Routes/Auth.routes");
 const customerRoutes = require("./Routes/customer.routes");
 const dashboardRoutes = require("./Routes/dashboard.routes");
 const serviceRequestRoutes = require("./Routes/ServiceRequests.routes");
