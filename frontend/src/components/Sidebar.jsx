@@ -51,6 +51,17 @@ const navItems = [
   },
 ];
 
+function TestingBanner() {
+  return (
+    <div
+      className="w-full text-center text-[11px] font-semibold tracking-wide py-1.5 px-3"
+      style={{ background: "#fde68a", color: "#78350f" }}
+    >
+      ⚠ This is a testing environment — not a real banking application.
+    </div>
+  );
+}
+
 function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(
     () => sessionStorage.getItem("mobileNavOpen") === "true"
@@ -79,6 +90,7 @@ function Sidebar() {
         className="hidden lg:block sticky top-0 z-30 w-full shrink-0"
         style={{ background: "#f5f5f5", boxShadow: "0 1px 0 rgba(0,0,0,0.07)" }}
       >
+        <TestingBanner />
         <div className="flex items-center h-[72px] px-8 xl:px-14 gap-6 max-w-[1600px] mx-auto">
           {/* Logo */}
           <NavLink to="/" className="shrink-0 flex items-center mr-6">
@@ -173,6 +185,7 @@ function Sidebar() {
 
       {/* ── MOBILE: sticky header + top-expanding full-width drawer ── */}
       <div className="lg:hidden sticky top-0 z-30">
+        <TestingBanner />
         {/* Mobile header bar */}
         <div
           className="flex items-center justify-between px-4 py-3"

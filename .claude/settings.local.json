@@ -9,7 +9,16 @@
       "Bash(node -e ' *)",
       "WebSearch",
       "Bash(sed -i '' 's/px-5 py-4/px-6 py-5/g' /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/ServiceRequests.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/Customers.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/Agents.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/CustomerDetail.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/ServiceRequestDetail.jsx)",
-      "Bash(sed -i '' 's/px-5 py-3/px-6 py-4/g' /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/ServiceRequests.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/Customers.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/Agents.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/CustomerDetail.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/ServiceRequestDetail.jsx)"
+      "Bash(sed -i '' 's/px-5 py-3/px-6 py-4/g' /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/ServiceRequests.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/Customers.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/Agents.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/CustomerDetail.jsx /Users/ahmedatef/Desktop/bank-project/frontend/src/pages/ServiceRequestDetail.jsx)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(git ls-tree *)",
+      "Bash(lsof -nP -iTCP -sTCP:LISTEN)",
+      "Bash(kill 41944 50654)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(vercel whoami *)",
+      "Bash(vercel project *)",
+      "Bash(git add *)"
     ]
   },
   "outputStyle": "default"
