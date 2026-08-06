@@ -3,7 +3,16 @@ const ServiceAgent = require("../models/ServiceAgent");
 
 const getAllAgents = async (req, res) => {
   try {
-    const agents = await ServiceAgent.find({}, { password: 0 }).sort({ name: 1 });
+    const agents = await ServiceAgent.find({ status: "Approved" }, { password: 0 }).sort({ name: 1 });
+    res.status(200).json(agents);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const getPendingAgents = async (req, res) => {
+  try {
+    const agents = await ServiceAgent.find({ status: "Pending" }, { password: 0 }).sort({ name: 1 });
     res.status(200).json(agents);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -16,8 +25,25 @@ const createAgent = async (req, res) => {
     if (!name || !role || !password)
       return res.status(400).json({ message: "name, role, and password are required" });
     const hashed = await bcrypt.hash(password, 10);
-    const agent = await ServiceAgent.create({ name, role, password: hashed });
-    res.status(201).json({ message: "Agent created", agent: { _id: agent._id, name: agent.name, role: agent.role } });
+    const agent = await ServiceAgent.create({ name, role, password: hashed, status: "Approved" });
+    res.status(201).json({ message: "Agent created", agent: { _id: agent._id, name: agent.name, role: agent.role, status: agent.status } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const approveAgent = async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!["Agent", "Supervisor"].includes(role))
+      return res.status(400).json({ message: "role must be Agent or Supervisor" });
+    const agent = await ServiceAgent.findOneAndUpdate(
+      { _id: req.params.id, status: "Pending" },
+      { role, status: "Approved" },
+      { returnDocument: "after", select: "-password" }
+    );
+    if (!agent) return res.status(404).json({ message: "Pending account not found" });
+    res.status(200).json({ message: "Account approved", agent });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -48,4 +74,4 @@ const deleteAgent = async (req, res) => {
   }
 };
 
-module.exports = { getAllAgents, createAgent, updateAgent, deleteAgent };
+module.exports = { getAllAgents, getPendingAgents, createAgent, approveAgent, updateAgent, deleteAgent };

@@ -21,8 +21,11 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "Bash(vercel --prod --yes)"
+      "Bash(vercel --prod --yes)",
+      "Bash(npx vite *)",
+      "Bash(python3 -c ' *)",
+      "Bash(node *)"
     ]
   },
-  "outputStyle": "default"
+  "outputStyle": "Learning"
 }

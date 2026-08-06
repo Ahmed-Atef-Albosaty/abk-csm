@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -9,6 +9,8 @@ import StatusBadge from "../components/StatusBadge";
 import Toast from "../components/Toast";
 import Pagination from "../components/Pagination";
 import ConfirmModal from "../components/ConfirmModal";
+import BankCard from "../components/BankCard";
+import { getTokenPayload } from "../utils/jwt";
 
 function exportCustomerPDF(customer, accounts, serviceRequests) {
   const doc = new jsPDF();
@@ -165,9 +167,11 @@ function exportTransactionsPDF(account, txList, customerName) {
 function CustomerDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [data, setData] = useState(null);
   const [loans, setLoans] = useState([]);
-  const [activeTab, setActiveTab] = useState("accounts");
+  const [cards, setCards] = useState([]);
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || "accounts");
   const [expandedAccount, setExpandedAccount] = useState(null);
   const [transactions, setTransactions] = useState({});
   const [txMeta, setTxMeta] = useState({});
@@ -185,16 +189,40 @@ function CustomerDetail() {
   const [txError, setTxError] = useState("");
   const [toast, setToast] = useState(null);
   const [confirmStatusToggle, setConfirmStatusToggle] = useState(false);
+  const [approvingId, setApprovingId] = useState(null);
+  const myRole = getTokenPayload()?.role;
+  const myAgentId = getTokenPayload()?.agentId;
 
-  useEffect(() => {
+  const loadServiceRequests = () =>
     API.get(`/customer/${id}`)
       .then(({ data }) => setData(data))
-      .catch((err) => setError(err.response?.data?.message || "Customer not found"))
-      .finally(() => setLoading(false));
+      .catch((err) => setError(err.response?.data?.message || "Customer not found"));
+
+  const loadCards = () =>
+    API.get(`/cards/${id}`)
+      .then(({ data }) => setCards(data))
+      .catch(() => setCards([]));
+
+  useEffect(() => {
+    loadServiceRequests().finally(() => setLoading(false));
     API.get(`/loan/${id}`)
       .then(({ data }) => setLoans(data))
       .catch(() => setLoans([]));
+    loadCards();
   }, [id]);
+
+  const approveCardRequest = async (srId) => {
+    setApprovingId(srId);
+    try {
+      await API.patch(`/service-requests/${srId}/status`, { status: "Resolved", agentId: myAgentId });
+      await Promise.all([loadServiceRequests(), loadCards()]);
+      setToast({ message: "Card approved and issued", type: "success" });
+    } catch (err) {
+      setToast({ message: err.response?.data?.message || "Approval failed", type: "error" });
+    } finally {
+      setApprovingId(null);
+    }
+  };
 
   const fetchTxPage = async (accountId, page) => {
     setTxLoading((p) => ({ ...p, [accountId]: true }));
@@ -306,6 +334,9 @@ function CustomerDetail() {
 
   const { customer, accounts, serviceRequests } = data;
   const isDeposit = txModal.type === "deposit";
+  const pendingCardRequests = serviceRequests.filter(
+    (sr) => sr.type === "CardCreateRequest" && sr.status !== "Resolved"
+  );
 
   return (
     <Layout>
@@ -473,7 +504,7 @@ function CustomerDetail() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <StatusBadge value={customer.status} />
+              <StatusBadge value={customer.status} dark />
               <button
                 onClick={() => setConfirmStatusToggle(true)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -498,7 +529,7 @@ function CustomerDetail() {
 
         {/* Tabs */}
         <div className="flex gap-1 bg-white/80 backdrop-blur-sm rounded-xl border border-white/60 p-1 mb-5 w-fit shadow-sm">
-          {["accounts", "service-requests", "loans"].map((tab) => (
+          {["accounts", "service-requests", "loans", "cards"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -513,7 +544,9 @@ function CustomerDetail() {
                 ? `Accounts (${accounts.length})`
                 : tab === "service-requests"
                 ? `Service Requests (${serviceRequests.length})`
-                : `Loans (${loans.length})`}
+                : tab === "loans"
+                ? `Loans (${loans.length})`
+                : `Cards (${cards.length}${pendingCardRequests.length ? ` +${pendingCardRequests.length} pending` : ""})`}
             </button>
           ))}
         </div>
@@ -562,7 +595,7 @@ function CustomerDetail() {
                       <p className="text-xs detail-muted uppercase tracking-wide mb-1">Account</p>
                       <p className="font-mono text-base font-medium">{acc.Acc_number}</p>
                       <div className="flex items-center gap-3 mt-2">
-                        <StatusBadge value={acc.status} />
+                        <StatusBadge value={acc.status} dark />
                         <span className="text-sm detail-muted">Balance</span>
                         <span className="text-xl font-bold text-[#f9c723]">
                           {acc.balance.toLocaleString("en-EG", { style: "currency", currency: "EGP" })}
@@ -741,6 +774,94 @@ function CustomerDetail() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === "cards" && (
+            <motion.div key="cards" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => navigate(`/service-requests?customerId=${id}&type=CardCreateRequest&cardType=Debit`)}
+                  className="btn-primary"
+                  style={{ background: "#3685c6" }}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeWidth="2" strokeLinecap="round" d="M12 5v14M5 12h14" />
+                  </svg>
+                  Create Debit Card
+                </button>
+                <button
+                  onClick={() => navigate(`/service-requests?customerId=${id}&type=CardCreateRequest&cardType=Credit`)}
+                  className="btn-gold"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeWidth="2" strokeLinecap="round" d="M12 5v14M5 12h14" />
+                  </svg>
+                  Create Credit Card
+                </button>
+              </div>
+              {cards.length === 0 && pendingCardRequests.length === 0 ? (
+                <div className="detail-card rounded-xl p-8 text-center text-base detail-muted">No cards for this customer yet.</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {pendingCardRequests.map((sr) => {
+                    const canApprove = myRole === "Supervisor" && ["InProgress", "Escalated"].includes(sr.status);
+                    return (
+                      <div key={sr._id} className="text-left group">
+                        <div
+                          className="relative cursor-pointer"
+                          onClick={() => navigate(`/service-requests/${sr._id}`)}
+                        >
+                          <BankCard
+                            card={{ _id: sr._id, cardType: sr.cardType, cardHolderName: customer.name, status: "Active" }}
+                            className="w-full rounded-2xl shadow-md opacity-40 grayscale transition-transform group-hover:-translate-y-1"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900/80 text-white backdrop-blur-sm">
+                              Awaiting Supervisor Approval
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-2 px-1">
+                          <span className="text-sm detail-muted">{sr.cardType} card requested</span>
+                          <StatusBadge value={sr.status} />
+                        </div>
+                        {canApprove && (
+                          <motion.button
+                            onClick={(e) => { e.stopPropagation(); approveCardRequest(sr._id); }}
+                            disabled={approvingId === sr._id}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            animate={
+                              approvingId === sr._id
+                                ? {}
+                                : { boxShadow: ["0 0 0 0 rgba(34,197,94,0.35)", "0 0 0 6px rgba(34,197,94,0)", "0 0 0 0 rgba(34,197,94,0)"] }
+                            }
+                            transition={{ boxShadow: { duration: 1.8, repeat: Infinity, ease: "easeOut" } }}
+                            className="w-full mt-2 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+                            style={{ background: "rgba(34,197,94,0.15)", color: "#16a34a", border: "1px solid rgba(34,197,94,0.35)" }}
+                          >
+                            {approvingId === sr._id ? "Approving…" : "Approve card"}
+                          </motion.button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {cards.map((c) => (
+                    <button
+                      key={c._id}
+                      onClick={() => navigate(`/cards/${c._id}`)}
+                      className="text-left group"
+                    >
+                      <BankCard card={c} className="w-full rounded-2xl shadow-md transition-transform group-hover:-translate-y-1 group-hover:shadow-xl" />
+                      <div className="flex items-center justify-between mt-2 px-1">
+                        <span className="text-sm detail-muted">{c.accountId?.Acc_number}</span>
+                        <StatusBadge value={c.status} />
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
             </motion.div>

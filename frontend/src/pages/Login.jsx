@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import API from "../api/axios";
 
@@ -7,6 +7,8 @@ const ABK_LOGO = "https://upload.wikimedia.org/wikipedia/commons/5/52/ABK_Logo.s
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [infoMessage, setInfoMessage] = useState(location.state?.message || "");
   const [form, setForm] = useState({ name: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,6 +18,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setInfoMessage("");
     setLoading(true);
     try {
       const { data } = await API.post("/auth/login", form);
@@ -29,7 +32,7 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex auth-page">
 
       {/* Left panel */}
       <div
@@ -265,6 +268,19 @@ function Login() {
             </h2>
             <p className="text-sm text-slate-500 mb-7">Access your operations dashboard</p>
 
+            {infoMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-5 px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2"
+              >
+                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeWidth="2.5" strokeLinecap="round" d="M5 13l4 4L19 7" />
+                </svg>
+                {infoMessage}
+              </motion.div>
+            )}
+
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
@@ -304,7 +320,7 @@ function Login() {
                   autoComplete="current-password"
                 />
               </div>
-              <button type="submit" disabled={loading} className="btn-secondary w-full mt-2">
+              <button type="submit" disabled={loading} className="btn-secondary w-full mt-6">
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">

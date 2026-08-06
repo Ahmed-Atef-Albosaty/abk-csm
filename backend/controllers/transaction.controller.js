@@ -94,12 +94,14 @@ const getTransactions = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const account = await Account.findById(req.params.accountId);
     if (!account) return res.status(404).json({ message: "Account not found" });
+    const filter = { Acc_Id: req.params.accountId };
+    if (req.query.cardId) filter.cardId = req.query.cardId;
     const [transactions, total] = await Promise.all([
-      Transaction.find({ Acc_Id: req.params.accountId })
+      Transaction.find(filter)
         .sort({ time_stamp: -1 })
         .skip((page - 1) * limit)
         .limit(limit),
-      Transaction.countDocuments({ Acc_Id: req.params.accountId }),
+      Transaction.countDocuments(filter),
     ]);
     res.status(200).json({
       page,

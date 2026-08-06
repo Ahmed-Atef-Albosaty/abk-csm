@@ -6,9 +6,9 @@ const signup = async (req, res) => {
   try {
     const { name, role, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const agent = new ServiceAgent({ name, role, password: hashedPassword });
+    const agent = new ServiceAgent({ name, role, password: hashedPassword, status: "Pending" });
     await agent.save();
-    res.status(201).json({ message: "Service agent created successfully" });
+    res.status(201).json({ message: "Account created. A supervisor must approve it before you can sign in." });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -23,6 +23,8 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, agent.password);
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
+    if (agent.status !== "Approved")
+      return res.status(403).json({ message: "Your account is pending supervisor approval" });
     const token = jwt.sign(
       { agentId: agent._id, name: agent.name, role: agent.role },
       process.env.JWT_SECRET,

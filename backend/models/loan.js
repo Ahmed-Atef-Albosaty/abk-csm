@@ -30,7 +30,7 @@ const loanSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Active", "Inactive", "Closed"],
+    enum: ["Active", "Suspended", "Closed"],
   },
   createdBy: {
     agentId: {
@@ -41,6 +41,15 @@ const loanSchema = new mongoose.Schema({
     timestamp: {
       type: Date,
       default: Date.now,
+    },
+  },
+  statusUpdatedBy: {
+    agentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ServiceAgent",
+    },
+    timestamp: {
+      type: Date,
     },
   },
   schedule: {

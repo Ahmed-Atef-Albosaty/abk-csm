@@ -159,7 +159,7 @@ function Customers() {
                     />
                   </div>
                 ))}
-                <div className="sm:col-span-2 flex gap-3 justify-end">
+                <div className="sm:col-span-2 flex gap-3 justify-end actions-row">
                   <button type="button" onClick={() => setShowForm(false)} className="cancel-btn px-4 py-2.5 text-sm text-white/70 hover:text-white transition-colors">Cancel</button>
                   <button type="submit" disabled={submitting} className="btn-gold">
                     {submitting ? "Saving…" : "Create customer"}

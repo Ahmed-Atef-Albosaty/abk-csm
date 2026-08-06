@@ -9,6 +9,7 @@ import { getTokenPayload } from "../utils/jwt";
 import StatusBadge from "../components/StatusBadge";
 import AuditTimeline from "../components/AuditTimeline";
 import Toast from "../components/Toast";
+import ConfirmModal from "../components/ConfirmModal";
 
 function exportAuditPDF(request, notes) {
   const doc = new jsPDF();
@@ -118,6 +119,9 @@ function ServiceRequestDetail() {
   const [agents, setAgents] = useState([]);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [toast, setToast] = useState(null);
+  const [creditLimitPreview, setCreditLimitPreview] = useState(null);
+  const [creditLimitLoading, setCreditLimitLoading] = useState(false);
+  const [confirmApprove, setConfirmApprove] = useState(false);
 
   const myAgentId = getTokenPayload()?.agentId;
   const myRole = getTokenPayload()?.role;
@@ -137,10 +141,24 @@ function ServiceRequestDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Expected credit limit — same calculation the backend runs at approval time
+  useEffect(() => {
+    if (!request || request.type !== "CardCreateRequest" || request.cardType !== "Credit" || !request.accountId) return;
+    setCreditLimitLoading(true);
+    API.post("/cards/preview-limit", { accountId: request.accountId, salary: request.salary })
+      .then(({ data }) => setCreditLimitPreview(data.creditLimit))
+      .catch(() => setCreditLimitPreview(null))
+      .finally(() => setCreditLimitLoading(false));
+  }, [request?._id]);
+
   const updateStatus = async (newStatus) => {
     setStatusUpdating(true);
     try {
       const { data } = await API.patch(`/service-requests/${id}/status`, { status: newStatus, agentId: myAgentId });
+      if (newStatus === "Resolved" && request.type === "CardCreateRequest") {
+        navigate(`/customers/${request.customerId}`, { state: { activeTab: "cards" } });
+        return;
+      }
       setRequest(data.serviceRequest);
       const { data: updatedNotes } = await API.get(`/service-requests/${id}/notes`);
       setNotes(updatedNotes);
@@ -179,7 +197,13 @@ function ServiceRequestDetail() {
     </Layout>
   );
 
-  const nextStatuses = VALID_TRANSITIONS[request.status] || [];
+  const isCardRequest = request.type === "CardCreateRequest";
+  const isCreditCardRequest = isCardRequest && request.cardType === "Credit";
+  const requestTitle = isCardRequest ? `${request.cardType} Card Request` : request.type;
+  const cardApprovalLocked = isCardRequest && myRole !== "Supervisor";
+  const nextStatuses = (VALID_TRANSITIONS[request.status] || []).filter(
+    (s) => !(s === "Resolved" && cardApprovalLocked)
+  );
   const assignedAgent = agents.find((a) => a._id === String(request.assignedAgentId));
   const assignedAgentLabel = request.assignedAgentId
     ? assignedAgent
@@ -190,6 +214,22 @@ function ServiceRequestDetail() {
   return (
     <Layout>
       <Toast toast={toast} onDismiss={() => setToast(null)} />
+      <ConfirmModal
+        open={confirmApprove}
+        title={`Approve ${request.cardType} card issuance`}
+        message={
+          isCreditCardRequest
+            ? creditLimitLoading
+              ? "Calculating expected credit limit…"
+              : creditLimitPreview != null
+              ? `This will issue a Credit card with a limit of EGP ${creditLimitPreview.toLocaleString()}. This cannot be undone.`
+              : "This will issue a Credit card. This cannot be undone."
+            : "This will issue a Debit card for this customer's account. This cannot be undone."
+        }
+        confirmLabel="Approve & Issue Card"
+        onConfirm={() => { setConfirmApprove(false); updateStatus("Resolved"); }}
+        onCancel={() => setConfirmApprove(false)}
+      />
       <div className="px-6 sm:px-8 lg:px-10 py-8 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <button
@@ -228,12 +268,15 @@ function ServiceRequestDetail() {
           <div className="detail-card rounded-xl p-7">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
               <div className="border-l-[3px] border-[#f9c723] pl-3">
-                <h1 className="text-2xl font-bold">{request.type}</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-2xl font-bold">{requestTitle}</h1>
+                  {isCardRequest && <StatusBadge value={request.cardType} dark />}
+                </div>
                 <p className="text-xs detail-muted font-mono mt-0.5">{request._id}</p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <StatusBadge value={request.status} />
-                <StatusBadge value={request.priority} />
+                <StatusBadge value={request.status} dark />
+                <StatusBadge value={request.priority} dark />
               </div>
             </div>
 
@@ -246,6 +289,9 @@ function ServiceRequestDetail() {
                 ["Created", new Date(request.createdAt).toLocaleDateString()],
                 ["Resolved", request.resolvedAt ? new Date(request.resolvedAt).toLocaleDateString() : "Pending"],
                 ["Assigned Agent", assignedAgentLabel],
+                ...(isCreditCardRequest
+                  ? [["Declared Salary", request.salary ? `EGP ${request.salary.toLocaleString()}` : "Not declared"]]
+                  : []),
               ].map(([label, value]) => (
                 <div key={label}>
                   <p className="text-xs detail-muted uppercase tracking-wide font-medium">{label}</p>
@@ -261,13 +307,39 @@ function ServiceRequestDetail() {
               <div className="border-l-[3px] border-[#f9c723] pl-3 mb-4">
                 <h2 className="text-xl font-semibold">Actions</h2>
               </div>
-              <div className="flex flex-wrap gap-3 items-start">
-                {nextStatuses.map((s) => (
-                  <button
+
+              {isCreditCardRequest && (
+                <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg mb-4" style={{ background: "rgba(249,199,35,0.12)", border: "1px solid rgba(249,199,35,0.3)" }}>
+                  <svg className="w-4 h-4 shrink-0 text-[#f9c723]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2" />
+                  </svg>
+                  <span className="text-sm text-white">
+                    {creditLimitLoading
+                      ? "Calculating expected credit limit…"
+                      : creditLimitPreview != null
+                      ? <>Approving will set a credit limit of <strong>EGP {creditLimitPreview.toLocaleString()}</strong></>
+                      : "Unable to estimate credit limit"}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3 items-start actions-row">
+                {nextStatuses.map((s) => {
+                  const isApprove = s === "Resolved" && isCardRequest;
+                  return (
+                  <motion.button
                     key={s}
-                    onClick={() => updateStatus(s)}
+                    onClick={() => (isApprove ? setConfirmApprove(true) : updateStatus(s))}
                     disabled={statusUpdating}
-                    className="py-2.5 px-5 rounded-lg text-base font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    animate={
+                      isApprove && !statusUpdating
+                        ? { boxShadow: ["0 0 0 0 rgba(34,197,94,0.35)", "0 0 0 7px rgba(34,197,94,0)", "0 0 0 0 rgba(34,197,94,0)"] }
+                        : {}
+                    }
+                    transition={{ boxShadow: { duration: 1.8, repeat: Infinity, ease: "easeOut" } }}
+                    className="py-2.5 px-5 rounded-lg text-base font-medium disabled:opacity-50 flex items-center gap-2"
                     style={
                       s === "Escalated"
                         ? { background: "rgba(239,68,68,0.22)", color: "#fca5a5", border: "1px solid rgba(239,68,68,0.35)" }
@@ -291,9 +363,10 @@ function ServiceRequestDetail() {
                         <path strokeWidth="2" strokeLinecap="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                       </svg>
                     )}
-                    Mark as {s}
-                  </button>
-                ))}
+                    {isApprove ? "View and Approve" : `Mark as ${s}`}
+                  </motion.button>
+                  );
+                })}
                 {myRole === "Supervisor" && (
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                     <select
@@ -315,6 +388,14 @@ function ServiceRequestDetail() {
                   </div>
                 )}
               </div>
+              {cardApprovalLocked && VALID_TRANSITIONS[request.status]?.includes("Resolved") && (
+                <p className="text-sm detail-muted mt-3 flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Only a Supervisor can approve card issuance and resolve this request.
+                </p>
+              )}
             </div>
           )}
 

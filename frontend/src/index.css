@@ -146,6 +146,7 @@
     position: relative;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     padding: 0.7rem 1.4rem;
     font-size: 0.9375rem;
@@ -459,6 +460,24 @@
 /* Pill-round every button globally (non-layered wins over Tailwind utilities) */
 button { border-radius: 50px; }
 
+/* Round every form field globally — beats Tailwind preflight's `border-radius: 0` reset on input/select/textarea */
+.form-input, .form-select, .form-textarea { border-radius: 1.5rem; }
+
+/* Login/Signup fields: flat underline style instead of a rounded box */
+.auth-page .form-input, .auth-page .form-select, .auth-page .form-textarea {
+  border-radius: 0;
+  border: none;
+  border-bottom: 1.5px solid #a8c0d8;
+  background-color: transparent;
+  box-shadow: none;
+}
+.auth-page .form-input:focus, .auth-page .form-select:focus, .auth-page .form-textarea:focus {
+  box-shadow: none;
+}
+
+/* Extra breathing room around button rows in forms and detail-view action sections */
+.actions-row { margin-top: 2rem; margin-bottom: 2rem; }
+
 /* Table gradient — non-layered so it beats section-card's white background in @layer components */
 .table-gradient-card {
   background: linear-gradient(180deg, #2d6aaa 0%, #253660 100%) !important;
@@ -475,6 +494,12 @@ button { border-radius: 50px; }
 /* Secondary table columns (email, phone, IDs, dates) — dimmer white */
 .data-table tbody td.td-secondary { color: rgba(255,255,255,0.70) !important; }
 .data-table tbody td.td-secondary * { color: rgba(255,255,255,0.70) !important; }
+
+/* Form fields inside a data-table cell (e.g. role picker in Approve Accounts) keep their
+   own dark text on a white background — the white-text override above would otherwise
+   make the selected value invisible */
+.data-table tbody td .form-select,
+.data-table tbody td .form-select * { color: #1a2540 !important; }
 
 /* Detail page cards */
 .detail-card {

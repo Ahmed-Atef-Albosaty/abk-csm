@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import API from "../api/axios";
 import Layout from "../components/Layout";
@@ -9,11 +9,12 @@ import Pagination from "../components/Pagination";
 
 const STATUSES = ["All", "New", "InProgress", "Escalated", "Resolved"];
 const PRIORITIES = ["All", "Low", "Medium", "High"];
-const TYPES = ["Complaint", "AccountFreeze", "InfoUpdate", "CardIssue"];
+const TYPES = ["Complaint", "AccountFreeze", "InfoUpdate", "CardIssue", "CardCreateRequest"];
 const PAGE_SIZE = 8;
 
 function ServiceRequests() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [requests, setRequests] = useState([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -25,13 +26,15 @@ function ServiceRequests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ customerId: "", accountId: "", type: "Complaint", description: "", priority: "Medium", agentId: "" });
+  const [form, setForm] = useState({ customerId: "", accountId: "", type: "Complaint", description: "", priority: "Medium", agentId: "", cardType: "Debit", salary: "" });
   const [submitting, setSubmitting] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [customerAccounts, setCustomerAccounts] = useState([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [agents, setAgents] = useState([]);
   const [toast, setToast] = useState(null);
+  const [creditLimitPreview, setCreditLimitPreview] = useState(null);
+  const [creditLimitLoading, setCreditLimitLoading] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -85,14 +88,52 @@ function ServiceRequests() {
     setCustomerAccounts(data.accounts || []);
   };
 
+  // Deep-link support: /service-requests?customerId=...&type=CardCreateRequest&cardType=Credit
+  useEffect(() => {
+    const customerId = searchParams.get("customerId");
+    if (!customerId) return;
+    const type = searchParams.get("type");
+    const cardType = searchParams.get("cardType");
+    openForm();
+    setForm((f) => ({
+      ...f,
+      ...(type && TYPES.includes(type) ? { type } : {}),
+      ...(cardType === "Debit" || cardType === "Credit" ? { cardType } : {}),
+    }));
+    handleCustomerChange(customerId);
+  }, []);
+
+  // Live expected credit limit — recalculated as the account or declared salary changes
+  useEffect(() => {
+    if (form.type !== "CardCreateRequest" || form.cardType !== "Credit" || !form.accountId) {
+      setCreditLimitPreview(null);
+      return;
+    }
+    setCreditLimitLoading(true);
+    const t = setTimeout(() => {
+      API.post("/cards/preview-limit", { accountId: form.accountId, salary: form.salary || undefined })
+        .then(({ data }) => setCreditLimitPreview(data.creditLimit))
+        .catch(() => setCreditLimitPreview(null))
+        .finally(() => setCreditLimitLoading(false));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [form.type, form.cardType, form.accountId, form.salary]);
+
   const handleCreate = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const { data } = await API.post("/service-requests", form);
+      const payload = { ...form };
+      if (form.type !== "CardCreateRequest") {
+        delete payload.cardType;
+        delete payload.salary;
+      } else {
+        payload.salary = form.salary ? Number(form.salary) : undefined;
+      }
+      const { data } = await API.post("/service-requests", payload);
       setRequests((prev) => [data.serviceRequest, ...prev]);
       setShowForm(false);
-      setForm({ customerId: "", accountId: "", type: "Complaint", description: "", priority: "Medium", agentId: "" });
+      setForm({ customerId: "", accountId: "", type: "Complaint", description: "", priority: "Medium", agentId: "", cardType: "Debit", salary: "" });
       setCustomerAccounts([]);
       setTotal((t) => t + 1);
     } catch (err) {
@@ -202,8 +243,9 @@ function ServiceRequests() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="form-label">Account (optional)</label>
+                <label className="form-label">Account{form.type === "CardCreateRequest" ? "" : " (optional)"}</label>
                 <select
+                  required={form.type === "CardCreateRequest"}
                   value={form.accountId}
                   onChange={(e) => setForm({ ...form, accountId: e.target.value })}
                   disabled={!form.customerId || customerAccounts.length === 0}
@@ -245,6 +287,48 @@ function ServiceRequests() {
                 </select>
               </div>
 
+              {form.type === "CardCreateRequest" && (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="form-label">Card type</label>
+                    <select value={form.cardType} onChange={(e) => setForm({ ...form, cardType: e.target.value })} className={inputCls}>
+                      <option value="Debit">Debit</option>
+                      <option value="Credit">Credit</option>
+                    </select>
+                  </div>
+
+                  {form.cardType === "Credit" && (
+                    <>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="form-label">Declared salary (optional)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={form.salary}
+                          onChange={(e) => setForm({ ...form, salary: e.target.value })}
+                          placeholder="Leave blank to base limit on account activity"
+                          className={inputCls}
+                        />
+                      </div>
+                      <div className="sm:col-span-2 flex items-center gap-2 px-3.5 py-2.5 rounded-lg" style={{ background: "rgba(249,199,35,0.12)", border: "1px solid rgba(249,199,35,0.3)" }}>
+                        <svg className="w-4 h-4 shrink-0 text-[#f9c723]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v2" />
+                        </svg>
+                        <span className="text-sm text-white">
+                          {!form.accountId
+                            ? "Select an account to estimate the credit limit"
+                            : creditLimitLoading
+                            ? "Calculating expected credit limit…"
+                            : creditLimitPreview != null
+                            ? <>Expected credit limit: <strong>EGP {creditLimitPreview.toLocaleString()}</strong></>
+                            : "Unable to estimate credit limit"}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
               <div className="sm:col-span-2 flex flex-col gap-1.5">
                 <label className="form-label">Description</label>
                 <textarea
@@ -256,7 +340,7 @@ function ServiceRequests() {
                 />
               </div>
 
-              <div className="sm:col-span-2 flex gap-3 justify-end">
+              <div className="sm:col-span-2 flex gap-3 justify-end actions-row">
                 <button type="button" onClick={() => setShowForm(false)} className="cancel-btn px-4 py-2.5 text-sm text-white/70 hover:text-white transition-colors">Cancel</button>
                 <button type="submit" disabled={submitting} className="btn-gold">
                   {submitting ? "Saving…" : "Create request"}

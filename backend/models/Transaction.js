@@ -5,6 +5,11 @@ const TransactionSchema = new mongoose.Schema({
     ref: "account",
     required: true,
   },
+  cardId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "card",
+    required: false,
+  },
   Transaction_type: {
     type: String,
     enum: ["Deposit", "Withdrawal", "LoanDisbursement"],

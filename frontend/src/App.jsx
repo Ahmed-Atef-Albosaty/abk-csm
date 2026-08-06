@@ -10,8 +10,10 @@ import CustomerDetail from "./pages/CustomerDetail";
 import ServiceRequests from "./pages/ServiceRequests";
 import ServiceRequestDetail from "./pages/ServiceRequestDetail";
 import Agents from "./pages/Agents";
+import ApproveAccounts from "./pages/ApproveAccounts";
 import Loans from "./pages/Loans";
 import LoanDetail from "./pages/LoanDetail";
+import CardDetail from "./pages/CardDetail";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SplashLoader from "./components/SplashLoader";
 
@@ -37,8 +39,10 @@ function App() {
           <Route path="/service-requests" element={<ProtectedRoute><ServiceRequests /></ProtectedRoute>} />
           <Route path="/service-requests/:id" element={<ProtectedRoute><ServiceRequestDetail /></ProtectedRoute>} />
           <Route path="/agents" element={<ProtectedRoute><Agents /></ProtectedRoute>} />
+          <Route path="/approve-accounts" element={<ProtectedRoute><ApproveAccounts /></ProtectedRoute>} />
           <Route path="/loans" element={<ProtectedRoute><Loans /></ProtectedRoute>} />
           <Route path="/loans/:id" element={<ProtectedRoute><LoanDetail /></ProtectedRoute>} />
+          <Route path="/cards/:id" element={<ProtectedRoute><CardDetail /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </>

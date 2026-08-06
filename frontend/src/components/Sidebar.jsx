@@ -58,6 +58,16 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    to: "/approve-accounts",
+    label: "Approve Accounts",
+    supervisorOnly: true,
+    icon: (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeWidth="1.8" strokeLinecap="round" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
 ];
 
 function TestingBanner() {
@@ -77,6 +87,7 @@ function Sidebar() {
   );
   const navigate = useNavigate();
   const me = getTokenPayload();
+  const visibleNavItems = navItems.filter((item) => !item.supervisorOnly || me?.role === "Supervisor");
 
   const toggleMobile = () => {
     setMobileOpen((v) => {
@@ -112,7 +123,7 @@ function Sidebar() {
 
           {/* Nav items — animated pill indicator */}
           <nav className="flex items-center gap-0.5 flex-1">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -245,7 +256,7 @@ function Sidebar() {
 
               {/* Nav rows */}
               <nav className="px-3 pt-3 pb-2 flex flex-col gap-0.5">
-                {navItems.map((item) => (
+                {visibleNavItems.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}

@@ -5,6 +5,12 @@ const customer = require("../models/customer");
 const Transaction = require("../models/Transaction");
 const { calculateAmortization } = require("../utils/loanCalculator");
 
+const LOAN_STATUS_TRANSITIONS = {
+  Active: ["Suspended", "Closed"],
+  Suspended: ["Active", "Closed"],
+  Closed: [],
+};
+
 const previewloan = async (req, res) => {
   const { principal, termMonths, annualInterestRate, frequency } = req.body;
   try {
@@ -162,4 +168,36 @@ const getLoan = async (req, res) => {
   }
 };
 
-module.exports = { previewloan, createLoan, getLoans, getLoanByCustomerId, getLoan };
+const updateLoanStatus = async (req, res) => {
+  try {
+    const { loanId } = req.params;
+    const { status } = req.body;
+
+    const loanData = await loan.findById(loanId);
+    if (!loanData) return res.status(404).json({ message: "Loan not found" });
+
+    const allowed = LOAN_STATUS_TRANSITIONS[loanData.status] || [];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({
+        message: `Invalid status transition from ${loanData.status} to ${status}`,
+      });
+    }
+
+    loanData.status = status;
+    loanData.statusUpdatedBy = { agentId: req.agent.agentId, timestamp: Date.now() };
+    await loanData.save();
+
+    res.status(200).json({ message: "Loan status updated", loan: loanData });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  previewloan,
+  createLoan,
+  getLoans,
+  getLoanByCustomerId,
+  getLoan,
+  updateLoanStatus,
+};

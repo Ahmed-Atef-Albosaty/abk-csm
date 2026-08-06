@@ -19,7 +19,7 @@ function Signup() {
     setLoading(true);
     try {
       await API.post("/auth/signup", form);
-      navigate("/login");
+      navigate("/login", { state: { message: "Account created! A supervisor needs to approve it before you can sign in." } });
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {
@@ -28,7 +28,7 @@ function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex auth-page">
       {/* Left panel */}
       <div
         className="hidden lg:flex lg:w-[58%] relative flex-col justify-between p-14 overflow-hidden"
@@ -196,7 +196,7 @@ function Signup() {
                 <label className="form-label">Password</label>
                 <input name="password" type="password" value={form.password} onChange={handleChange} required className="form-input" placeholder="Choose a strong password" autoComplete="new-password" />
               </div>
-              <button type="submit" disabled={loading} className="btn-secondary w-full mt-2">
+              <button type="submit" disabled={loading} className="btn-secondary w-full mt-6">
                 {loading ? "Creating…" : "Create account →"}
               </button>
             </form>
