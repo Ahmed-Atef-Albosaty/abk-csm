@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import API from "../api/axios";
 import Layout from "../components/Layout";
@@ -42,6 +42,7 @@ function frequencyLabel(value) {
 
 function Loans() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [customers, setCustomers] = useState([]);
@@ -115,6 +116,15 @@ function Loans() {
     const { data } = await API.get(`/customer/${customerId}`);
     setCustomerAccounts(data.accounts || []);
   };
+
+  // Deep-link support: /loans?customerId=... opens the form pre-selected for that customer
+  useEffect(() => {
+    const customerId = searchParams.get("customerId");
+    if (!customerId) return;
+    openForm();
+    handleCustomerChange(customerId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handlePreview = async (e) => {
     e.preventDefault();

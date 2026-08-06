@@ -166,6 +166,7 @@ function CustomerDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [loans, setLoans] = useState([]);
   const [activeTab, setActiveTab] = useState("accounts");
   const [expandedAccount, setExpandedAccount] = useState(null);
   const [transactions, setTransactions] = useState({});
@@ -190,6 +191,9 @@ function CustomerDetail() {
       .then(({ data }) => setData(data))
       .catch((err) => setError(err.response?.data?.message || "Customer not found"))
       .finally(() => setLoading(false));
+    API.get(`/loan/${id}`)
+      .then(({ data }) => setLoans(data))
+      .catch(() => setLoans([]));
   }, [id]);
 
   const fetchTxPage = async (accountId, page) => {
@@ -494,7 +498,7 @@ function CustomerDetail() {
 
         {/* Tabs */}
         <div className="flex gap-1 bg-white/80 backdrop-blur-sm rounded-xl border border-white/60 p-1 mb-5 w-fit shadow-sm">
-          {["accounts", "service-requests"].map((tab) => (
+          {["accounts", "service-requests", "loans"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -505,7 +509,11 @@ function CustomerDetail() {
               {activeTab === tab && (
                 <motion.span layoutId="tabBg" className="absolute inset-0 bg-[#e8f2fc] rounded-md" style={{ zIndex: -1 }} />
               )}
-              {tab === "accounts" ? `Accounts (${accounts.length})` : `Service Requests (${serviceRequests.length})`}
+              {tab === "accounts"
+                ? `Accounts (${accounts.length})`
+                : tab === "service-requests"
+                ? `Service Requests (${serviceRequests.length})`
+                : `Loans (${loans.length})`}
             </button>
           ))}
         </div>
@@ -673,6 +681,56 @@ function CustomerDetail() {
                           <td className="td-secondary text-sm">{new Date(sr.createdAt).toLocaleDateString()}</td>
                           <td className="text-right">
                             <button onClick={() => navigate(`/service-requests/${sr._id}`)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold">
+                              View
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeWidth="2.5" strokeLinecap="round" d="M9 18l6-6-6-6" />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === "loans" && (
+            <motion.div key="loans" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => navigate(`/loans?customerId=${id}`)}
+                  className="btn-primary"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeWidth="2" strokeLinecap="round" d="M12 5v14M5 12h14" />
+                  </svg>
+                  Apply for loan
+                </button>
+              </div>
+              {loans.length === 0 ? (
+                <div className="detail-card rounded-xl p-8 text-center text-base detail-muted">No loans for this customer.</div>
+              ) : (
+                <div className="detail-card table-gradient-card rounded-xl overflow-x-auto">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        {["Loan ID", "Principal", "Rate", "Frequency", "Status", ""].map((h) => (
+                          <th key={h}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loans.map((loan) => (
+                        <tr key={loan._id}>
+                          <td className="td-secondary font-mono text-xs">{loan._id.slice(-8)}</td>
+                          <td className="font-medium">{loan.principal.toLocaleString("en-EG", { style: "currency", currency: "EGP" })}</td>
+                          <td className="td-secondary text-sm">{loan.annualInterestRate}%</td>
+                          <td className="td-secondary text-sm">{loan.frequency}</td>
+                          <td><StatusBadge value={loan.status} /></td>
+                          <td className="text-right">
+                            <button onClick={() => navigate(`/loans/${loan._id}`)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold">
                               View
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeWidth="2.5" strokeLinecap="round" d="M9 18l6-6-6-6" />
