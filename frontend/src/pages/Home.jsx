@@ -217,7 +217,7 @@ function Home() {
               style={{ color: "rgba(255,255,255,0.82)" }}
             >
               Manage customers, service requests, and agents from a single
-              unified workspace &mdash; built for speed, clarity, and real-time
+              unified workspace, built for speed, clarity, and real-time
               visibility.
             </motion.p>
 
