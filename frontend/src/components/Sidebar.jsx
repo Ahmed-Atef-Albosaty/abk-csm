@@ -76,7 +76,7 @@ function TestingBanner() {
       className="w-full text-center text-[11px] font-semibold tracking-wide py-1.5 px-3"
       style={{ background: "#fde68a", color: "#78350f" }}
     >
-      ⚠ This is a testing environment — not a real banking application.
+      ⚠ This is a testing environment, not a real banking application.
     </div>
   );
 }
