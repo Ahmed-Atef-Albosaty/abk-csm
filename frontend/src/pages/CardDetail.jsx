@@ -140,7 +140,7 @@ function CardDetail() {
       <ConfirmModal
         open={confirmBlock}
         title="Block card"
-        message="This permanently blocks the card — it cannot be unblocked afterward, a new card would need to be issued. Continue?"
+        message="This permanently blocks the card. It cannot be unblocked afterward, a new card would need to be issued. Continue?"
         confirmLabel="Block card"
         danger
         onConfirm={() => updateStatus("Blocked")}
@@ -313,7 +313,7 @@ function CardDetail() {
                         {tx.type === "Payment" ? "-" : "+"}{formatMoney(tx.amount)}
                       </td>
                       <td>{formatMoney(tx.resultingOwedBalance)}</td>
-                      <td className="hidden sm:table-cell td-secondary text-sm">{tx.description || "—"}</td>
+                      <td className="hidden sm:table-cell td-secondary text-sm">{tx.description || "-"}</td>
                     </tr>
                   ))
                 ) : (
@@ -323,7 +323,7 @@ function CardDetail() {
                       <td className="font-medium">{tx.Transaction_type}</td>
                       <td style={{ color: "#fca5a5" }}>-{formatMoney(tx.Transaction_Amount)}</td>
                       <td>{formatMoney(tx.balanceAfter)}</td>
-                      <td className="hidden sm:table-cell td-secondary text-sm">{tx.performedBy || "—"}</td>
+                      <td className="hidden sm:table-cell td-secondary text-sm">{tx.performedBy || "-"}</td>
                     </tr>
                   ))
                 )}

@@ -83,7 +83,7 @@ function LoanDetail() {
       <ConfirmModal
         open={confirmClose}
         title="Close loan"
-        message="This permanently closes the loan — it cannot be reopened afterward. Continue?"
+        message="This permanently closes the loan. It cannot be reopened afterward. Continue?"
         confirmLabel="Close loan"
         danger
         onConfirm={() => updateStatus("Closed")}
